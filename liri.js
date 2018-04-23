@@ -1,143 +1,151 @@
-var action = process.argv[2];
-var value = process.argv[3];
-var Twitter = require('twitter');
-// twitter keys variable, referencing the keys file and export line
-var keys = require('./keys.js');
+console.log("the liri is starting");
+
+//using .env to hide keys
+require("dotenv").config();
+
+//Dependencies
+// import the keys file the keys file 
+var keys = require("./keys.js");
+
+//Import the Twitter NPM package
+var Twitter = require("twitter");
 // assigning the keys
-var client = new Twitter(keys.twitterKeys);
-//what to search for
-var params = {
-    screen_name: 'heidiBluem',
-    count: 20
-    }
-var request = require('request');
+var client = new Twitter(keys.twitter);
 
-var fs = require('fs');
+//import the Spotify NPM package 
+var Spotify = require("spotify");
+var spotify = new Spotify(keys.spotify);
 
-var spotify = require("spotify");
+//Import the request npm package
+var request = require("request");
 
-// set movie name equal to user input
-var movieName = value;
-var movieDefault = "Mr.Nobody";
-// search url variable
-var url = 'http://www.omdbapi.com/?t=' + movieName + '&y=&plot=short&r=json';
-var urlDefault = 'http://www.omdbapi.com/?t=' + movieDefault + '&y=&plot=short&r=json';
+//Import the FS package fo read/write
+var fs = require("fs");
 
+//Grab the input from the command line
+var movieName = process.argv[3];
+var liriReturn = process.argv[2];
 
-switch (action) {
-    case 'mytweets':
-        myTweets();
+//swutches for various commands
+switch(liriReturn) {
+    case "my-tweets":
+    myTweets();
+    break;
+
+    case"spotify-this-song":
+    spotifyThisSong();
+    break;
+
+    case"movie-this":
+    movieThis();
+    break;
+
+    case "do-what-it-says":
+    doWhatItSays();
+    break;
+   
+    //instructions for first-time user
+    default: console.log("\n" + "type any command after 'node liri.js': " + "\n" +
+        "my-tweets" + "\n" +
+        "spotify-this-song 'any song title'" + "\n" +
+        "movie-this 'any movie title'" + "\n" +
+        "do-what-it-says" + "\n" +
+        "use quotes for multiword titles");
         break;
-    case 'spotify':
-        spotifyThis(value);
-        break;
-    case 'omdb':
-        omdbThis(value);
-        break;
-    case 'random':
-        random();
-        break;
-}
+};
 
-// my-tweets function
+//funciton my-tweets and errors
 function myTweets() {
-    //using the npm
-    client.get('statuses/user_timeline', params, function(error, tweets, response) {
-        //if error, log it, else log the tweets
+    var params = {
+        screen_name: "heidiBluem",
+        count:20
+    };
+    //console.log(params);
+
+    //using the npm to ask twitter to search for user tweet
+    client.get("statuses/user_timeline", params, function(error, tweets, response){
+        //if an error log it, else log the tweets
         if (error) {
             console.log(error);
-            }
-            else{
-                // for loop to run through the length of my account's tweets
-                console.log('Last 20 Tweets:')
-                for (i = 0; i < tweets.length; i++) {
-                    // adds a number and dot before to show order
-                    console.log((i+1) + ". " + tweets[i].text);
-                    }
-                }
-            });
-             
-// end myTweets function
-}
-
-// spotifyThis function
-function spotifyThis() {
-    spotify.search({type: 'track', query: value || 'ace of base the sign'}, function(err, data) {
-        if (err) {
-            console.log('Error occurred: ' + err);
-            return;
         }
-        else {
-        //console.log("/////////Data////////")
-        //console.log(data);
-        //console.log("///////Data.tracks.items///////")
-        var spotifyCall = data.tracks.items[0];
-        //console.log(spotifyCall);
-        //console.log("/////////spotifyCall.artists[0].name////////");
-    
-    // if no error, show me the information from the API
-        console.log("\n/////////////////SPOTIFY THIS////////////////\n");
-        var artist = spotifyCall.artists[0].name;
-        console.log("Artist: " + artist);
-        var song = spotifyCall.name;
-        console.log("Song name: " + song);
-        var preview = spotifyCall.preview_url;
-        console.log("Preview Link: " + preview);
-        var album = spotifyCall.album.name;
-        console.log("Album: " + album);
-    
-    }
+        else{
+            //for loop to run through the length of my accounts tweets
+            for (i = 0; i < tweets.length; i++) {
+                console.log(tweets[i].texts);
+            }
+            
+        }
     });
-    }
-    
-    //request('https://api.spotify.com/v1/search?q=' + value + '&type=track', function(error, response, body) {
-  
+}
+//spotify-this-song... 
 
-//OMDB FUNCTION
-function movie() {
-    //npm package
-  var request = require('request');
-  // set movie name equal to user input
-  var movieName = value;
-  var movieDefault = "Mr.Nobody";
+//Function for running a Spotify search, use the spotify tool to request a search for the track name as the "data" variable
+function spotifyThisSong(songName) {
+    var songName = process.argv[3];
+    if(!songName) {
+        songName = "I want it that way";
+    };
+    songRequest = songName;
+    spotify.search({
+        type: "track",
+        query: songRequest
+    },
+    function (err,data) {
+        if(err) {
+            var trackInfo = data.tracks.items;
+            for(var i=0; i<songs.length; i++) {
+                if (trackInfo[i] != undefined) {
+                    var spotifyResults =
+                        "Artist:" + trackInfo[i].artists[0].name + "\n"+
+                        "song:" + trackInfo[i].name + "\n" +
+                        "Preview URL:" + trackInfo[i].preview.url + "\n" +
+                        "Album:" + trackInfo[i].album.name + "\n"
+                    console.log(spotifyResults);
+                    console.log (" ");
+                };
+            }; 
+        } else {
+            console.log("error:" + err);
+            return;
+        };
+    });
+};        
+                
+//movie this... run a request to the OMDB API with the movie specified
+
+function movieThis() {
+  
   // search url variable
-  var url = 'http://www.omdbapi.com/?t=' + movieName + '&y=&plot=short&r=json';
-  var urlDefault = 'http://www.omdbapi.com/?t=' + movieDefault + '&y=&plot=short&r=json';
-  
-   // if the user entered a title, search that
-   if (movieName != null) {
-      request(url, function (error, response, body) {
-        // If the request is successful
-        if (!error && response.statusCode == 200) {
-                // Parse the body and pull for each attribute
-                console.log("\n/////////////////MOVIE THIS////////////////\n")
-                console.log("Title: " + value);
-                console.log("Year: " + JSON.parse(body)["Year"]);
-                console.log("Rating: " + JSON.parse(body)["imdbRating"]);
-                console.log("Country of Production: " + JSON.parse(body)["Country"]);
-                console.log("Language: " + JSON.parse(body)["Language"]);
-                console.log("Plot: " + JSON.parse(body)["Plot"]);
-                console.log("Actors: " + JSON.parse(body)["Actors"]);
-              };//end of if
-        });//end of request
-  
-      // if user doesn't enter a value, value will be set to Mr.Nobody
-      } else {
-        request(urlDefault, function (error, response, body) {
-          // If the request is successful (i.e. if the response status code is 200)
-          if (!error && response.statusCode == 200) {
-                console.log("Title: " + movieDefault);
-                console.log("Year: " + JSON.parse(body)["Year"]);
-                console.log("Rating: " + JSON.parse(body)["imdbRating"]);
-                console.log("Country of Production: " + JSON.parse(body)["Country"]);
-                console.log("Language: " + JSON.parse(body)["Language"]);
-                console.log("Plot: " + JSON.parse(body)["Plot"]);
-                console.log("Actors: " + JSON.parse(body)["Actors"]);
-              };//end of if
-        });//end of request
-      } // end of else
-    } // end of movie()
+  var queryUrl = "http://www.omdbapi.com/?t=" + movieName + "&y=&plot=short&apikey=trilogy";
+    
+  // if the user entered a title, search that
+  request (queryUrl, function (error, response, body) {
 
+    //if the request is successful
+    if (!error && response.statusCode == 200) {
+
+        //pull requested data in readable format & parse the body and pull for each attribut e
+        var myMovieData = JSON.parse(body);
+        var queryUrlResults =
+            "Title:" + myMovieData.Title + "\n" +
+            "Year:" + myMovieData.Year + "\n" +
+            "IMDB Rating:" + myMovieData.Ratings[0].value + "\n" +
+            "Origin COuntry:" + myMovieData.Country + "\n" +
+            "Language:" + myMovieData.Language + "\n" +
+            "Plot:" + myMovieData.Plot + "\n" +
+            "Actors:" + myMovieData.Actors + "\n"
+        console.log(queryUrlResults);
+    } else {
+        console.log("error:" + err);
+        return;
+    };
+});
+};        
+
+    
+       
+               
+               
 // random function
 function random() {
     fs.readFile('random.txt', 'utf8', function(error, data) {
